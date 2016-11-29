@@ -11,7 +11,7 @@ A script to scrape the Add-Ons from [Blockland forum](https://forum.blockland.us
 The script uses two modules that can be installed through pip. Those are [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/) and [Requests](http://docs.python-requests.org/en/master/).
 
 ```
-bs4
+beautifulsoup4
 requests
 ```
 
