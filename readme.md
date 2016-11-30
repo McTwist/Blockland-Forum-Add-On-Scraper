@@ -17,7 +17,7 @@ requests
 
 ## Run
 
-Use your favorite Python version installed.
+Use your favorite Python 3 version installed.
 
 ```
 python blscraper.py
