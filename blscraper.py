@@ -1,5 +1,6 @@
 import sys
 import re
+import getopt
 from bs4 import BeautifulSoup
 import requests
 import concurrent.futures as futures
@@ -246,7 +247,8 @@ class BlocklandForumScraper:
 			"latest_update": 0,
 			"one_zip_per_topic": True,
 			"timeout": 10,
-			"retries": 1
+			"retries": 1,
+			"threads": get_core_count()
 		})
 
 		AntiDomainBasher.timer = self.settings.sleep_block
@@ -273,7 +275,7 @@ class BlocklandForumScraper:
 				visited.add(board.url)
 
 			# Initialize the pool
-			with futures.ThreadPoolExecutor(max_workers=get_core_count()) as e:
+			with futures.ThreadPoolExecutor(max_workers=self.settings.threads) as e:
 				future_data = {e.submit(load, board): board for board in boards}
 
 				# Keep going until list is empty
