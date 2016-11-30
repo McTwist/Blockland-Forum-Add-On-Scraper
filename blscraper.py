@@ -528,8 +528,46 @@ class ArchiveFile:
 # Start here
 def main(argv):
 
-	forum = BlocklandForumScraper(db='blforum.sqlite')
-	forum.process(["https://forum.blockland.us/index.php?board=34.0"])
+	# Default values
+	threads = None
+	timeout = None
+	retries = None
+	dbfile = 'blforum.sqlite'
+	urls = ["https://forum.blockland.us/index.php?board=34.0"]
+
+	# Get arguments
+	try:
+		opts, args = getopt.getopt(argv[1:], "t:r:j:", ["db="])
+	except getopt.GetoptError:
+		print("Invalid paramenters")
+		return 2
+	else:
+		for opt, arg in opts:
+			if opt == '-j':
+				threads = int(arg)
+			if opt == '-t':
+				timeout = int(arg)
+			if opt == '-r':
+				retries = int(arg)
+			elif opt == '--db':
+				dbfile = arg
+		# Got some urls
+		if len(args) > 0:
+			urls = args
+
+	# Create main object
+	forum = BlocklandForumScraper(db=dbfile)
+
+	# Apply settings
+	if threads:
+		forum.settings.threads = threads
+	if timeout:
+		forum.settings.timeout = timeout
+	if retries:
+		forum.settings.retries = retries
+
+	# Process the urls
+	forum.process(urls)
 
 	return 0
 
