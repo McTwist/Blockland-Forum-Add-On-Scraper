@@ -354,7 +354,10 @@ class ForumBoard:
 		# Remove old topics
 		topics = [topic for topic in topics if topic.timestamp > self.settings.latest_update]
 		# Together
-		boards.extend(topics)
+		if len(topics):
+			boards.extend(topics)
+		else:
+			boards = []
 		return boards
 
 	# Check if link is a topic link
