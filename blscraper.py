@@ -81,7 +81,7 @@ class Database:
 			title TEXT,
 			author TEXT,
 			author_url TEXT,
-			post TEXT,
+			content TEXT,
 			url TEXT UNIQUE,
 			last_update INTEGER
 		)""")
@@ -113,11 +113,11 @@ class Database:
 			# Update current topic with new info
 			if row:
 				topic_id = row[0]
-				cur.execute("""UPDATE topics SET title = ?, post = ?, last_update = ? WHERE id = ?""", (topic.title, topic.post, topic.timestamp, topic_id))
+				cur.execute("""UPDATE topics SET title = ?, content = ?, last_update = ? WHERE id = ?""", (topic.title, topic.content, topic.timestamp, topic_id))
 			# Add new topic
 			else:
-				cur.execute("""INSERT OR IGNORE INTO topics(title, author, author_url, post, url, last_update)
-					VALUES (?, ?, ?, ?, ?, ?)""", (topic.title, topic.author, topic.author_url, topic.post, topic.url, topic.timestamp))
+				cur.execute("""INSERT OR IGNORE INTO topics(title, author, author_url, content, url, last_update)
+					VALUES (?, ?, ?, ?, ?, ?)""", (topic.title, topic.author, topic.author_url, topic.content, topic.url, topic.timestamp))
 				topic_id = cur.lastrowid
 			# Store id in topic for further use
 			topic.id = topic_id
@@ -378,7 +378,7 @@ class ForumTopic:
 		self.author = ""
 		self.author_url = ""
 		self.title = title or ""
-		self.post = ""
+		self.content = ""
 		self.url = url or ""
 		self.date = date or ""
 
@@ -417,7 +417,7 @@ class ForumTopic:
 		# Locate first post
 		post = soup.find(class_="post")
 		if post:
-			self.post = str(post)
+			self.content = str(post)
 			# Find all links in this post
 			files = [ArchiveFile(self.settings, self, link['href']) for link in post.find_all(name='a')]
 
