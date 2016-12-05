@@ -350,7 +350,7 @@ class ForumBoard:
 		def remove_by(text):
 			return text[:text.find("by")]
 		# Locate all topics
-		topics = [ForumTopic(self.settings, a.text, a['href'], remove_by(a.parent.find_next_siblings(name='td')[-1].span.text)) for a in soup.find_all(href=self.is_topic_link) if a.parent.name == 'td']
+		topics = [ForumTopic(self.settings, a.text, a['href'], remove_by(a.find_parent('td').find_next_siblings(name='td')[-1].span.text)) for a in soup.find_all(href=self.is_topic_link) if a.find_parent('td').name == 'td']
 		# Remove old topics
 		topics = [topic for topic in topics if topic.timestamp > self.settings.latest_update]
 		# Together
