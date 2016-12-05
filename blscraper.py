@@ -470,6 +470,7 @@ class ArchiveFile:
 	# Guess the filename it could have
 	def load(self):
 		status = None
+		url = self.url
 		with AntiDomainBasher.wait_for_lock(self.url):
 			print("File: " + self.url)
 			# Try to get info about the file
@@ -483,6 +484,8 @@ class ArchiveFile:
 				else:
 					headers = resp.headers
 					status = resp.status_code
+					# Update url for redirects
+					url = resp.url
 					break
 			# Special "head-is-blocked" handling
 			if status == 403:
@@ -496,6 +499,8 @@ class ArchiveFile:
 				else:
 					headers = resp.headers
 					status = resp.status_code
+					# Update url for redirects
+					url = resp.url
 
 		# Does not exist
 		if status != 200:
@@ -509,7 +514,7 @@ class ArchiveFile:
 			if found:
 				self.name = found.group(1)
 				return True
-		file = self.get_url_file(self.url)
+		file = self.get_url_file(url)
 		# Check for valid name
 		found = re.compile('(((.*)_(.*))\.zip)').search(file)
 		if found:
