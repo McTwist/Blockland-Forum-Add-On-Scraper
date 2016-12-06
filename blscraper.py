@@ -256,6 +256,10 @@ class BlocklandForumScraper:
 
 	# Go through the links
 	def process(self, urls):
+		import os.path
+
+		if self.settings.download and not os.path.isdir(self.settings.download):
+			os.makedirs(self.settings.download)
 
 		with Database.connect(self.dbfile) as db:
 
