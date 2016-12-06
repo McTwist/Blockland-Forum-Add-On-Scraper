@@ -30,7 +30,7 @@ The data within the database can then be accessed normally and used to in any wa
 It can also be run with parameters to customize it further.
 
 ```
-python blscraper.py [-j threads] [-t timeout] [-r retries] [--db database_file] [urls [...]]
+python blscraper.py [-j threads] [-t timeout] [-r retries] [-d path] [--db database_file] [urls [...]]
 ```
 
 ```

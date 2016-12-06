@@ -246,6 +246,7 @@ class BlocklandForumScraper:
 			"sleep_block": (5, 10),
 			"latest_update": 0,
 			"one_zip_per_topic": True,
+			"download": None,
 			"timeout": 10,
 			"retries": 1,
 			"threads": get_core_count()
@@ -475,6 +476,14 @@ class ArchiveFile:
 
 	# Guess the filename it could have
 	def load(self):
+		guess = self.guess_filename()
+		# Guess by downloading as well
+		if self.settings.download and self.name and guess:
+			guess = self.download(self.settings.download)
+		return guess
+
+	# Guess the filename it could have
+	def guess_filename(self):
 		status = None
 		url = self.url
 		lock = AntiDomainBasher.wait_for_lock(self.url)
@@ -536,6 +545,47 @@ class ArchiveFile:
 		
 		return False
 
+	# Download file and save it
+	def download(self, path):
+		import os.path, os, zipfile
+		if not self.name:
+			return False
+		status = None
+
+		lock = AntiDomainBasher.wait_for_lock(self.url)
+		if not lock:
+			return False
+		with lock:
+			print("Download: " + self.url)
+			# Try to download the file
+			for _ in range(self.settings.retries + 1):
+				try:
+					resp = requests.get(self.url, timeout=self.settings.timeout, stream=True)
+				except requests.exceptions.Timeout:
+					pass # Try again
+				except requests.exceptions.RequestException:
+					return False
+				else:
+					status = resp.status_code
+					break
+
+		if status != 200:
+			return False
+
+		file = os.path.join(path, self.name)
+
+		# Save to a file
+		with open(file, 'wb') as f:
+			for chunk in resp.iter_content(4096):
+				f.write(chunk)
+
+		# Check if not zip file and then remove it
+		if not zipfile.is_zipfile(file):
+			# TODO: If possible, actually try to get the correct link out from this
+			os.remove(file)
+			return False
+		return True
+
 	# Get file from url
 	@staticmethod
 	def get_url_file(url):
@@ -549,12 +599,13 @@ def main(argv):
 	threads = None
 	timeout = None
 	retries = None
+	download = None
 	dbfile = 'blforum.sqlite'
 	urls = ["https://forum.blockland.us/index.php?board=34.0"]
 
 	# Get arguments
 	try:
-		opts, args = getopt.getopt(argv[1:], "t:r:j:", ["db="])
+		opts, args = getopt.getopt(argv[1:], "t:r:j:d:", ["db="])
 	except getopt.GetoptError:
 		print("Invalid paramenters")
 		return 2
@@ -566,6 +617,8 @@ def main(argv):
 				timeout = int(arg)
 			if opt == '-r':
 				retries = int(arg)
+			if opt == '-d':
+				download = arg
 			elif opt == '--db':
 				dbfile = arg
 		# Got some urls
@@ -582,6 +635,8 @@ def main(argv):
 		forum.settings.timeout = timeout
 	if retries:
 		forum.settings.retries = retries
+	if download:
+		forum.settings.download = download
 
 	# Process the urls
 	forum.process(urls)
