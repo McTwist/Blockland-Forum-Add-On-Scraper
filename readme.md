@@ -23,7 +23,7 @@ Use your favorite Python 3 version installed.
 python blscraper.py
 ```
 
-This will take around 4 to 8 hours to scrape all valid Add-Ons from the forum Add-On forum board and put them into an SQLite file. Keep in mind that it wont download the Add-Ons, but rather save their links.
+This will take around 4 to 8 hours to scrape all valid Add-Ons from the forum Add-On forum board and put them into an SQLite file. Keep in mind that it will only download the Add-Ons if you specify so, else it will only save their links.
 
 The data within the database can then be accessed normally and used to in any way desired.
 
