@@ -607,7 +607,7 @@ def main(argv):
 	try:
 		opts, args = getopt.getopt(argv[1:], "t:r:j:d:", ["db="])
 	except getopt.GetoptError:
-		print("Invalid paramenters")
+		print("Invalid parameters")
 		return 2
 	else:
 		for opt, arg in opts:
