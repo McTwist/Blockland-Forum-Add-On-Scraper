@@ -92,6 +92,16 @@ class Database:
 			url TEXT UNIQUE,
 			topic_id INTEGER NOT NULL
 		)""")
+		# Create profiles
+		cur.execute("""CREATE TABLE IF NOT EXISTS profiles (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT UNIQUE,
+			url TEXT UNIQUE,
+			bl_id INTEGER,
+			content TEXT
+		)""")
+		# Create index
+		cur.execute("""CREATE INDEX IF NOT EXISTS bl_id ON profiles (bl_id)""")
 
 		self._finish()
 
@@ -144,6 +154,20 @@ class Database:
 				VALUES (?, ?, ?)""", ( file.name, file.url, file.topic.id ))
 
 		self._finish()
+
+	# Add a new profile
+	def add_profile(self, profiles):
+		cur = self._start()
+
+		if isinstance(profiles, ForumProfile):
+			profiles = [profiles]
+
+		for profile in profiles:
+			if not isinstance(profile, ForumProfile):
+				continue
+
+			cur.execute("""INSERT OR IGNORE INTO profiles(name, url, bl_id, content)
+				VALUES (?, ?, ?, ?)""", (profile.name, profile.url, profile.bl_id, profile.content))
 
 	# Get latest timestamp from topics
 	def get_latest_timestamp(self):
@@ -303,6 +327,10 @@ class BlocklandForumScraper:
 							# Handle types
 							if isinstance(request, ForumTopic):
 								db.add_topic(request)
+							elif isinstance(request, ForumProfile):
+								if data == True:
+									db.add_profile(request)
+								continue
 							elif isinstance(request, ArchiveFile):
 								if data == True:
 									db.add_file(request)
@@ -417,6 +445,8 @@ class ForumTopic:
 
 		soup = BeautifulSoup(resp.text, 'html.parser')
 
+		files = []
+
 		# Locate author
 		def is_profile_link(href):
 			return href and re.compile('\?action\=profile;u\=([0-9]*)$').search(href)
@@ -424,16 +454,16 @@ class ForumTopic:
 		if profile:
 			self.author = profile.text
 			self.author_url = profile['href']
+			files.append(ForumProfile(self.settings, self.author_url))
 
 		# Locate first post
 		post = soup.find(class_="post")
 		if post:
 			self.content = str(post)
 			# Find all links in this post
-			files = [ArchiveFile(self.settings, self, link['href']) for link in post.find_all(name='a')]
+			files.extend([ArchiveFile(self.settings, self, link['href']) for link in post.find_all(name='a')])
 
-			return files
-		return []
+		return files
 
 	# Get timestamp from a date
 	@property
@@ -467,6 +497,71 @@ class ForumTopic:
 		if d:
 			self._timestamp = time.mktime(d.timetuple())
 		return self._timestamp
+
+# Handles a user profile
+class ForumProfile:
+	# Constructor
+	def __init__(self, settings, url):
+		self.name = ""
+		self.url = url
+		self.bl_id = -1
+		self.content = ""
+
+		self.settings = settings
+
+	# Load the profile
+	def load(self):
+		lock = AntiDomainBasher.wait_for_lock(self.url)
+		if not lock:
+			return False
+		with lock:
+			print("Profile: " + self.url)
+			# Try to get topic page
+			for _ in range(self.settings.retries + 1):
+				try:
+					resp = requests.get(self.url, timeout=self.settings.timeout)
+				except requests.exceptions.Timeout:
+					pass # Try again
+				except requests.exceptions.RequestException:
+					return False
+				else:
+					break
+
+		# Fix problem with html
+		text = re.compile('<\/td>\s*<\/td>').sub('</td>', resp.text)
+
+		# Parse the response
+		soup = BeautifulSoup(text, 'html.parser')
+
+		# Decorators
+		def is_profile_name(tag):
+			return tag and re.compile('^Name:').search(tag.text)
+		def is_profile_bl_id(tag):
+			return tag and re.compile('^Blockland ID:').search(tag.text)
+
+		# Locate name
+		name = soup.find(is_profile_name)
+		if name:
+			if name.name != 'td':
+				name = name.find_parent('td')
+			self.name = name.find_next_sibling('td').text
+
+		# Locate BL_ID
+		bl_id = soup.find(is_profile_bl_id)
+		if bl_id:
+			if bl_id.name != 'td':
+				bl_id = bl_id.find_parent('td')
+			self.bl_id = bl_id.find_next_sibling('td').text
+
+		# Store original content
+		if name:
+			self.content = str(name.find_parent('table'));
+		elif bl_id:
+			self.content = str(bl_id.find_parent('table'))
+		else:
+			self.content = str(soup)
+
+		return True
 
 # Handles a file
 class ArchiveFile:
