@@ -329,7 +329,10 @@ class ForumBoard:
 
 	# Load the board
 	def load(self):
-		with AntiDomainBasher.wait_for_lock(self.url):
+		lock = AntiDomainBasher.wait_for_lock(self.url)
+		if not lock:
+			return False
+		with lock:
 			print("Board: " + self.url)
 			# Try to get board
 			for _ in range(self.settings.retries + 1):
@@ -391,7 +394,10 @@ class ForumTopic:
 
 	# Load the page and get content
 	def load(self):
-		with AntiDomainBasher.wait_for_lock(self.url):
+		lock = AntiDomainBasher.wait_for_lock(self.url)
+		if not lock:
+			return False
+		with lock:
 			print("Topic: " + self.url)
 			# Try to get topic page
 			for _ in range(self.settings.retries + 1):
@@ -471,7 +477,10 @@ class ArchiveFile:
 	def load(self):
 		status = None
 		url = self.url
-		with AntiDomainBasher.wait_for_lock(self.url):
+		lock = AntiDomainBasher.wait_for_lock(self.url)
+		if not lock:
+			return False
+		with lock:
 			print("File: " + self.url)
 			# Try to get info about the file
 			for _ in range(self.settings.retries + 1):
