@@ -699,12 +699,13 @@ def main(argv):
 	timeout = None
 	retries = None
 	download = None
+	sleep_block = None
 	dbfile = 'blforum.sqlite'
 	urls = ["https://forum.blockland.us/index.php?board=34.0"]
 
 	# Get arguments
 	try:
-		opts, args = getopt.getopt(argv[1:], "t:r:j:d:", ["db="])
+		opts, args = getopt.getopt(argv[1:], "t:r:j:d:b:", ["db="])
 	except getopt.GetoptError:
 		print("Invalid parameters")
 		return 2
@@ -718,6 +719,15 @@ def main(argv):
 				retries = int(arg)
 			if opt == '-d':
 				download = arg
+			if opt == '-b':
+				arg = [int(i) for i in arg.split(',')];
+				if len(arg) == 2:
+					sleep_block = tuple(arg)
+				elif len(arg) == 1:
+					sleep_block = arg[0]
+				else:
+					print("Parameter -b should either be a tuple(2) or a single integer")
+					return 2
 			elif opt == '--db':
 				dbfile = arg
 		# Got some urls
@@ -736,6 +746,8 @@ def main(argv):
 		forum.settings.retries = retries
 	if download:
 		forum.settings.download = download
+	if sleep_block:
+		forum.settings.sleep_block = sleep_block
 
 	# Process the urls
 	forum.process(urls)
