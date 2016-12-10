@@ -37,6 +37,7 @@ python blscraper.py [-j threads] [-t timeout] [-r retries] [-d path] [--db datab
 threads = Amount of threads to use at most. Default: Core count
 timeout = How long time to wait until giving up on a link. Default: 10
 retries = How many times to try the link before giving up. Default: 1
+path = Path to where to download the files. Default: None
 database_file = The path to store the database to. Default: blforum.sqlite
 urls = All the urls to check against. Default: Link to Blockland Forum Add-On Board
 ```
