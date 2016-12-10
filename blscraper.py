@@ -713,13 +713,13 @@ def main(argv):
 		for opt, arg in opts:
 			if opt == '-j':
 				threads = int(arg)
-			if opt == '-t':
+			elif opt == '-t':
 				timeout = int(arg)
-			if opt == '-r':
+			elif opt == '-r':
 				retries = int(arg)
-			if opt == '-d':
+			elif opt == '-d':
 				download = arg
-			if opt == '-b':
+			elif opt == '-b':
 				arg = [int(i) for i in arg.split(',')];
 				if len(arg) == 2:
 					sleep_block = tuple(arg)
