@@ -273,7 +273,8 @@ class BlocklandForumScraper:
 			"download": None,
 			"timeout": 10,
 			"retries": 1,
-			"threads": get_core_count()
+			"threads": get_core_count(),
+			"verbose": 0
 		})
 
 		AntiDomainBasher.timer = self.settings.sleep_block
@@ -289,7 +290,8 @@ class BlocklandForumScraper:
 
 			self.settings.latest_update = db.get_latest_timestamp()
 
-			print("Searching through forum...")
+			if self.settings.verbose > 1:
+				print("Searching through forum...")
 
 			# Prepare urls
 			boards = [ForumBoard(self.settings, url) for url in urls]
@@ -309,7 +311,8 @@ class BlocklandForumScraper:
 
 				# Keep going until list is empty
 				while len(future_data):
-					print("Queued: " + str(len(future_data)))
+					if self.settings.verbose > 1:
+						print("Queued: " + str(len(future_data)))
 					for future in futures.as_completed(future_data):
 						request = future_data[future]
 						del future_data[future]
@@ -318,8 +321,9 @@ class BlocklandForumScraper:
 							data = future.result()
 						except Exception as exc:
 							import traceback
-							print(traceback.format_exc())
-							print("Error: (" + str(type(request)) + ") " + str(exc))
+							if self.settings.verbose > 0:
+								print(traceback.format_exc())
+								print("Error: (" + str(type(request)) + ") " + str(exc))
 						else:
 							# Something bad happened
 							if data == False:
@@ -366,7 +370,8 @@ class ForumBoard:
 		if not lock:
 			return False
 		with lock:
-			print("Board: " + self.url)
+			if self.settings.verbose > 1:
+				print("Board: " + self.url)
 			# Try to get board
 			for _ in range(self.settings.retries + 1):
 				try:
@@ -431,7 +436,8 @@ class ForumTopic:
 		if not lock:
 			return False
 		with lock:
-			print("Topic: " + self.url)
+			if self.settings.verbose > 1:
+				print("Topic: " + self.url)
 			# Try to get topic page
 			for _ in range(self.settings.retries + 1):
 				try:
@@ -515,7 +521,8 @@ class ForumProfile:
 		if not lock:
 			return False
 		with lock:
-			print("Profile: " + self.url)
+			if self.settings.verbose > 1:
+				print("Profile: " + self.url)
 			# Try to get topic page
 			for _ in range(self.settings.retries + 1):
 				try:
@@ -589,7 +596,8 @@ class ArchiveFile:
 		if not lock:
 			return False
 		with lock:
-			print("File: " + self.url)
+			if self.settings.verbose > 1:
+				print("File: " + self.url)
 			# Try to get info about the file
 			for _ in range(self.settings.retries + 1):
 				try:
@@ -655,7 +663,8 @@ class ArchiveFile:
 		if not lock:
 			return False
 		with lock:
-			print("Download: " + self.url)
+			if self.settings.verbose > 1:
+				print("Download: " + self.url)
 			# Try to download the file
 			for _ in range(self.settings.retries + 1):
 				try:
@@ -700,12 +709,13 @@ def main(argv):
 	retries = None
 	download = None
 	sleep_block = None
+	verbose = 0
 	dbfile = 'blforum.sqlite'
 	urls = ["https://forum.blockland.us/index.php?board=34.0"]
 
 	# Get arguments
 	try:
-		opts, args = getopt.getopt(argv[1:], "t:r:j:d:b:", ["db="])
+		opts, args = getopt.getopt(argv[1:], "t:r:j:d:b:v", ["db="])
 	except getopt.GetoptError:
 		print("Invalid parameters")
 		return 2
@@ -728,6 +738,8 @@ def main(argv):
 				else:
 					print("Parameter -b should either be a tuple(2) or a single integer")
 					return 2
+			elif opt == '-v':
+				verbose += 1
 			elif opt == '--db':
 				dbfile = arg
 		# Got some urls
@@ -748,6 +760,8 @@ def main(argv):
 		forum.settings.download = download
 	if sleep_block:
 		forum.settings.sleep_block = sleep_block
+
+	forum.settings.verbose = verbose
 
 	# Process the urls
 	forum.process(urls)

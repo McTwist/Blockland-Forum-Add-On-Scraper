@@ -30,7 +30,7 @@ The data within the database can then be accessed normally and used to in any wa
 It can also be run with parameters to customize it further.
 
 ```
-python blscraper.py [-j threads] [-t timeout] [-r retries] [-d path] [-b sleep] [--db database_file] [urls [...]]
+python blscraper.py [-j threads] [-t timeout] [-r retries] [-d path] [-b sleep] [-v[v[v]]] [--db database_file] [urls [...]]
 ```
 
 ```
@@ -40,5 +40,6 @@ retries = How many times to try the link before giving up. Default: 1
 path = Path to where to download the files. Default: None
 sleep = How long you will wait between each call to a domain. Default: 5,10
 database_file = The path to store the database to. Default: blforum.sqlite
+-vvv  = Amount of verbosity. More v, the more verbose. Default: 0
 urls = All the urls to check against. Default: Link to Blockland Forum Add-On Board
 ```
