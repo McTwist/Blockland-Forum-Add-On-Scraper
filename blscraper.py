@@ -147,7 +147,7 @@ class Database:
 		for file in files:
 			if not isinstance(file, ArchiveFile):
 				continue
-			if not file.topic.id:
+			if not file.topic or not file.topic.id:
 				continue
 
 			cur.execute("""INSERT OR IGNORE INTO files(name, url, topic_id)
@@ -180,6 +180,13 @@ class Database:
 			return row[0]
 		else:
 			return 0
+
+	# Get all files as a generator
+	def get_files(self):
+		cur = self._start();
+
+		for row in cur.execute("SELECT url FROM files"):
+			yield row[0]
 
 # Keeps track of last visited domains and avoids it to bash too much
 class AntiDomainBasher:
@@ -271,6 +278,7 @@ class BlocklandForumScraper:
 			"latest_update": 0,
 			"one_zip_per_topic": True,
 			"download": None,
+			"download_only": False,
 			"timeout": 10,
 			"retries": 1,
 			"threads": get_core_count(),
@@ -294,7 +302,10 @@ class BlocklandForumScraper:
 				print("Searching through forum...")
 
 			# Prepare urls
-			boards = [ForumBoard(self.settings, url) for url in urls]
+			if not self.settings.download_only:
+				items = [ForumBoard(self.settings, url) for url in urls]
+			else:
+				items = [ArchiveFile(self.settings, None, url) for url in db.get_files()]
 
 			# Decorator
 			def load(data):
@@ -302,12 +313,12 @@ class BlocklandForumScraper:
 
 			visited = set()
 
-			for board in boards:
-				visited.add(board.url)
+			for item in items:
+				visited.add(item.url)
 
 			# Initialize the pool
 			with futures.ThreadPoolExecutor(max_workers=self.settings.threads) as e:
-				future_data = {e.submit(load, board): board for board in boards}
+				future_data = {e.submit(load, item): item for item in items}
 
 				# Keep going until list is empty
 				while len(future_data):
@@ -708,6 +719,7 @@ def main(argv):
 	timeout = None
 	retries = None
 	download = None
+	download_only = False
 	sleep_block = None
 	verbose = 0
 	dbfile = 'blforum.sqlite'
@@ -715,7 +727,7 @@ def main(argv):
 
 	# Get arguments
 	try:
-		opts, args = getopt.getopt(argv[1:], "t:r:j:d:b:v", ["db="])
+		opts, args = getopt.getopt(argv[1:], "t:r:j:d:b:v", ["db=", "download-only"])
 	except getopt.GetoptError:
 		print("Invalid parameters")
 		return 2
@@ -742,6 +754,8 @@ def main(argv):
 				verbose += 1
 			elif opt == '--db':
 				dbfile = arg
+			elif opt == '--download-only':
+				download_only = True
 		# Got some urls
 		if len(args) > 0:
 			urls = args
@@ -760,7 +774,8 @@ def main(argv):
 		forum.settings.download = download
 	if sleep_block:
 		forum.settings.sleep_block = sleep_block
-
+	
+	forum.settings.download_only = download_only
 	forum.settings.verbose = verbose
 
 	# Process the urls
