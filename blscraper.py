@@ -775,6 +775,9 @@ def main(argv):
 	if sleep_block:
 		forum.settings.sleep_block = sleep_block
 	
+	if download_only and not download:
+		print("Option --download-only require option -d to function properly")
+		return 1
 	forum.settings.download_only = download_only
 	forum.settings.verbose = verbose
 
